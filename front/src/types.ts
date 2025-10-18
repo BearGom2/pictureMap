@@ -9,6 +9,10 @@ export type RegionProperties = {
   adm_cd: string;
   sgg: string;
   sido: string;
+  adm_cd2?: string;
+  sggnm?: string;
+  sidonm?: string;
+  area_m2?: number;
 };
 
 export type RegionFeature = GeoJSON.Feature<

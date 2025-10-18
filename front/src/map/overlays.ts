@@ -42,17 +42,33 @@ export function computeOverlays(
   galleries: Galleries,
   viewport: Viewport
 ): OverlayEntry[] {
+  if (!map.getSource("adm")) return [];
+
   const level = levelByZoom(viewport.zoom);
-  const loadedDongFeatures = map.querySourceFeatures("adm", {
-    sourceLayer: PMTILES_LAYERS.dong,
-  }) as MapGeoJSONFeature[];
+  const getRenderedFeatures = (layerId: string): MapGeoJSONFeature[] => {
+    if (!map.getLayer(layerId)) return [];
+    try {
+      return map.queryRenderedFeatures({
+        layers: [layerId],
+      }) as MapGeoJSONFeature[];
+    } catch {
+      return [];
+    }
+  };
+  let loadedDongFeatures: MapGeoJSONFeature[] = [];
+  try {
+    loadedDongFeatures = map.querySourceFeatures("adm", {
+      sourceLayer: PMTILES_LAYERS.dong,
+    }) as MapGeoJSONFeature[];
+  } catch {
+    loadedDongFeatures = [];
+  }
 
   const out: OverlayEntry[] = [];
 
   if (level === "dong") {
-    const rendered = map.queryRenderedFeatures({
-      layers: ["dong-fill"],
-    }) as MapGeoJSONFeature[];
+    const rendered = getRenderedFeatures("dong-fill");
+    if (!rendered.length) return out;
     const byAdm = new Map<string, RegionFeature[]>();
     for (const f of rendered) {
       const rf = toRegionFeature(f);
@@ -69,9 +85,8 @@ export function computeOverlays(
   }
 
   if (level === "sgg") {
-    const sggRendered = map.queryRenderedFeatures({
-      layers: ["sgg-fill"],
-    }) as MapGeoJSONFeature[];
+    const sggRendered = getRenderedFeatures("sgg-fill");
+    if (!sggRendered.length) return out;
     const bySgg = new Map<string, RegionFeature[]>();
     for (const f of sggRendered) {
       const p = f.properties as Record<string, unknown> | null;
@@ -98,9 +113,8 @@ export function computeOverlays(
     return out;
   }
 
-  const sidoRendered = map.queryRenderedFeatures({
-    layers: ["sido-fill"],
-  }) as MapGeoJSONFeature[];
+  const sidoRendered = getRenderedFeatures("sido-fill");
+  if (!sidoRendered.length) return out;
   const bySido = new Map<string, RegionFeature[]>();
   for (const f of sidoRendered) {
     const p = f.properties as Record<string, unknown> | null;
